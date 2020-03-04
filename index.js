@@ -1,12 +1,22 @@
 var WordExtractor = require("word-extractor");
 var TelegramBot = require('node-telegram-bot-api');
+
+
 var token = '1142305571:AAHi21iolrFMTeXDCdrtB1gqkbJHPxT0fpo';
 var bot = new TelegramBot(token, { polling: true });
-var extractor = new WordExtractor();
-var extracted = extractor.extract('zaminu.doc');
-var students = [];
+
+
+var students = [
+  {
+    id: 'gg',
+    group: 'MM10'
+  }
+];
+var grp;
 var zaminu,replase;
 
+
+// Отримання замін
 var https = require('https');
 var fs = require('fs');
 var file = fs.createWriteStream("Заміни.doc");
@@ -14,17 +24,16 @@ var request = https.get("https://www.stxt.com.ua/download/zam.php", function(res
 response.pipe(file);
 });
 
-setTimeout(function(){
-  extracted.then(function(doc) {
-    zaminu = doc.getBody();
-    replase = zaminu.match(/ 1 (.*) 2/);
-  });
-}, 1000);
 
-bot.onText(/\/data/, function(msg,match){
-  var userId = msg.from.id;
-  bot.sendMessage(userId, 'Document =  '+ replase);
-});
+// Відправка замін через деякий час
+setTimeout(function(){}, 1000);
+
+
+// Початок
+bot.onText(/\/start/, function(msg){
+  bot.sendMessage(msg.from.id,"Розклад та заміни\nЩоб авторизивуатися потрібно ввести /group [назва групи]\nПриклад: /group ПСК16\n");
+})
+
 
 bot.onText(/\/getdata/, function(msg,match){
   var userId = msg.from.id;
@@ -33,9 +42,13 @@ bot.onText(/\/getdata/, function(msg,match){
 bot.on('callback_query', query=>{
     bot.answerCallbackQuery(query.id, query.data)
 });
+
+
+// Авторизація
 bot.onText(/group (.+)/, function(msg,match){
 var userId = msg.from.id;
 var group = match[1];
+grp = group;
 bot.sendMessage(userId, 'Ты из группы '+group+'. Добро пожаловать!', {
     reply_markup: {
         inline_keyboard: [
@@ -65,32 +78,42 @@ bot.sendMessage(userId, 'Ты из группы '+group+'. Добро пожал
     }
 });
 });
-function getRandomQuestion(){
-    return questions[Math.floor(Math.random()*questions.length)];
-  }
-  
-  function newQuestion(msg){
-    var arr = getRandomQuestion();
-    var text = arr.title;
-    var options = {
-      reply_markup: JSON.stringify({
-        inline_keyboard: arr.buttons, 
-      })
-    };
-    chat = msg.hasOwnProperty('chat') ? msg.chat.id : msg.from.id;
-    bot.sendMessage(chat, text, options); 
-  }
-  bot.onText(/\/start_test/, function (msg, match) {
-    newQuestion(msg);
-  });
+
+
+// Підписка
 bot.on('callback_query', function (msg) {
     var answer = msg.data;
     console.log(answer);
-  
+    var flag;
     if (answer=='replacements') {
       bot.sendDocument(msg.from.id, 'Заміни.doc');
-    } else {
-      bot.sendMessage(msg.from.id, 'Ответ неверный ❌');
+    }
+    if (answer=='autorization') {
+      for(var i = 0;i<students.length;i++)
+      {
+        if(students[i].id != msg.from.id)
+        {
+          flag = true;
+        }
+        else
+        {
+          flag = false;
+        }
+      }
+      if(flag==true)
+      {
+      var userID = msg.from.id;
+      var std = {
+        id: userID,
+        group: grp
+      }
+      students.push(std);
+      }
+      else
+      {
+      bot.sendMessage(msg.from.id ,"Ты уже подписан на меня!!!");
+      }
+      console.log(students);
     }
     newQuestion(msg);
   });
