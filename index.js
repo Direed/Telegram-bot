@@ -1,17 +1,26 @@
 var WordExtractor = require("word-extractor");
 var TelegramBot = require('node-telegram-bot-api');
 
+var mongoose = require('mongoose');
+const url = 'mongodb+srv://Admin:Admin@telegrambotbd-tz3ph.mongodb.net/test?retryWrites=true&w=majority'
+
+const Schema = mongoose.Schema;
+const userSchema = new Schema({
+  id: String,
+  group: String
+});
+
+mongoose.connect(url, {
+  useUnifiedTopology: true,
+  useNewUrlParser: true
+});
+
+const User = mongoose.model("User", userSchema);
 
 var token = '1142305571:AAHi21iolrFMTeXDCdrtB1gqkbJHPxT0fpo';
 var bot = new TelegramBot(token, { polling: true });
 
 
-var students = [
-  {
-    id: 'gg',
-    group: 'MM10'
-  }
-];
 var grp;
 var zaminu,replase;
 
@@ -44,7 +53,7 @@ bot.on('callback_query', query=>{
 });
 
 
-// Авторизація
+// Авторизація та отримання меню користувача
 bot.onText(/group (.+)/, function(msg,match){
 var userId = msg.from.id;
 var group = match[1];
@@ -80,40 +89,37 @@ bot.sendMessage(userId, 'Ты из группы '+group+'. Добро пожал
 });
 
 
-// Підписка
+// Меню
 bot.on('callback_query', function (msg) {
     var answer = msg.data;
     console.log(answer);
     var flag;
+    //Заміни
     if (answer=='replacements') {
       bot.sendDocument(msg.from.id, 'Заміни.doc');
     }
+    //Підписка
     if (answer=='autorization') {
-      for(var i = 0;i<students.length;i++)
-      {
-        if(students[i].id != msg.from.id)
-        {
-          flag = true;
+      User.find({}, function(err, users){
+        if(err) return console.log(err);
+        users.forEach(element => {
+          if(element.id != msg.from.id){
+            flag = false;
+          }
+          else {flag = true};
+        });
+        if(flag == false){
+          const user = new User({id: msg.from.id, group: grp});
+          user.save(function(err){
+            if(err) return console.log(err);
+            console.log("Add user");
+          });
         }
-        else
-        {
-          flag = false;
+        else {
+          bot.sendMessage(msg.from.id, "Ты уже подписан на меня!!!");
         }
-      }
-      if(flag==true)
-      {
-      var userID = msg.from.id;
-      var std = {
-        id: userID,
-        group: grp
-      }
-      students.push(std);
-      }
-      else
-      {
-      bot.sendMessage(msg.from.id ,"Ты уже подписан на меня!!!");
-      }
-      console.log(students);
+        console.log(users);
+      })
     }
     newQuestion(msg);
   });
