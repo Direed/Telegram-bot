@@ -28,14 +28,67 @@ var zaminu,replase;
 // Отримання замін
 var https = require('https');
 var fs = require('fs');
-var file = fs.createWriteStream("Заміни.doc");
-var request = https.get("https://www.stxt.com.ua/download/zam.php", function(response) {
-response.pipe(file);
-});
+var extractor = new WordExtractor();
+
 
 
 // Відправка замін через деякий час
-setTimeout(function(){}, 1000);
+function dataUpdate(){
+
+  let file = fs.createWriteStream("Заміни.doc");
+  let request = https.get("https://www.stxt.com.ua/download/zam.php", function(response) {
+    response.pipe(file);
+  });
+
+  let file1 = fs.readFileSync("Заміни.doc", "utf8");
+  let file2 = fs.readFileSync("zaminu.doc", "utf8");
+
+  if(file1==file2)
+  {
+    console.log("==");
+  }
+  else{
+    console.log("!=");
+    let fileupdate = fs.createWriteStream("zaminu.doc");
+    let request = https.get("https://www.stxt.com.ua/download/zam.php", function(response) {
+      response.pipe(fileupdate);
+    });
+
+    var extracted = extractor.extract("Заміни.doc");
+    extracted.then(function(doc) {
+      var zam = doc.getBody().split("Кого замінити")[1];
+    
+    
+      let lessonNumber = '';
+    
+      let zaminu = zam.split('\t\t\t')
+          .map(line => {
+            return line.replace(/\t\t/g, "").split('\t');
+          })
+          .map(cells => {
+              if (cells[0].length === 1) {
+                  lessonNumber = cells[0];
+              }
+    
+              if (cells[0].length > 1) {
+                cells.unshift(lessonNumber);
+              }
+    
+              if (cells[0].length === 0) {
+                  cells[0] = lessonNumber;
+              }
+    
+    
+              return cells;
+          })
+          .filter(cells => cells.length > 2);
+          
+          console.log(zaminu);
+    });
+  };
+}
+
+setInterval(dataUpdate, 1000);
 
 
 // Початок
@@ -113,6 +166,7 @@ bot.on('callback_query', function (msg) {
           user.save(function(err){
             if(err) return console.log(err);
             console.log("Add user");
+            bot.sendMessage(msg.from.id, "Поздравляю. Ты подписался на бота!!!")
           });
         }
         else {
