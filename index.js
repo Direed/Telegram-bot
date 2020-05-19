@@ -1,25 +1,27 @@
-var WordExtractor = require("word-extractor");
-var TelegramBot = require('node-telegram-bot-api');
+const WordExtractor = require("word-extractor");
+const TelegramBot = require('node-telegram-bot-api');
+const funct = require('./fnct');
+const button = require('./buttons');
+const keyboard = require('./keyboard');
+const mongoose = require('mongoose');
+require('./model/user.model')
 
-var mongoose = require('mongoose');
+
 const url = 'mongodb+srv://Admin:Admin@telegrambotbd-tz3ph.mongodb.net/test?retryWrites=true&w=majority'
-
-const Schema = mongoose.Schema;
-const userSchema = new Schema({
-  id: String,
-  group: String
-});
 
 mongoose.connect(url, {
   useUnifiedTopology: true,
   useNewUrlParser: true
 });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model("User");
 
 var token = '1142305571:AAHi21iolrFMTeXDCdrtB1gqkbJHPxT0fpo';
 var bot = new TelegramBot(token, { polling: true });
 
+module.exports = {
+  bot
+}
 
 var grp;
 var zaminu,replase;
@@ -31,76 +33,73 @@ var fs = require('fs');
 var extractor = new WordExtractor();
 
 
-
-// Відправка замін через деякий час
-function dataUpdate(){
-
-  let file = fs.createWriteStream("Заміни.doc");
-  let request = https.get("https://www.stxt.com.ua/download/zam.php", function(response) {
-    response.pipe(file);
-  });
-
-  let file1 = fs.readFileSync("Заміни.doc", "utf8");
-  let file2 = fs.readFileSync("zaminu.doc", "utf8");
-
-  if(file1==file2)
-  {
-    console.log("==");
-  }
-  else{
-    console.log("!=");
-    let fileupdate = fs.createWriteStream("zaminu.doc");
-    let request = https.get("https://www.stxt.com.ua/download/zam.php", function(response) {
-      response.pipe(fileupdate);
-    });
-
-    var extracted = extractor.extract("Заміни.doc");
-    extracted.then(function(doc) {
-      var zam = doc.getBody().split("Кого замінити")[1];
-    
-    
-      let lessonNumber = '';
-    
-      let zaminu = zam.split('\t\t\t')
-          .map(line => {
-            return line.replace(/\t\t/g, "").split('\t');
-          })
-          .map(cells => {
-              if (cells[0].length === 1) {
-                  lessonNumber = cells[0];
-              }
-    
-              if (cells[0].length > 1) {
-                cells.unshift(lessonNumber);
-              }
-    
-              if (cells[0].length === 0) {
-                  cells[0] = lessonNumber;
-              }
-    
-    
-              return cells;
-          })
-          .filter(cells => cells.length > 2);
-          
-          console.log(zaminu);
-    });
-  };
-}
-
-setInterval(dataUpdate, 1000);
-
-
 // Початок
 bot.onText(/\/start/, function(msg){
-  bot.sendMessage(msg.from.id,"Розклад та заміни\nЩоб авторизивуатися потрібно ввести /group [назва групи]\nПриклад: /group ПСК16\n");
+  const welcome = "Розклад та заміни\nВиберіть один з доступних режимів. Режим авторизації дозволить отримувати заміни та розклад для окремої групи. Режим анонімності дозволить отримувати заміни та розклад для усіх груп."
+  bot.sendMessage(msg.from.id, welcome, {
+    reply_markup: {
+      keyboard: keyboard.start
+    }
+  })
 })
 
-
-bot.onText(/\/getdata/, function(msg,match){
-  var userId = msg.from.id;
-  bot.sendDocument(userId, 'Заміни.doc');
+bot.on('message', function(msg){
+  let flag,usertype;
+  switch(msg.text){
+    case button.start.user:
+      User.find({}, function(err, users){
+        if(err) return console.log(err);
+        users.forEach(element => {
+          if(element.id != msg.from.id){
+            flag = false;
+          }
+          else {flag = true};
+        });
+        if(flag == false){
+            bot.sendMessage(msg.from.id, "Щоб авторизивуатися потрібно ввести /group [назва групи]\nПриклад: /group ПСК16\n");
+        }
+        else {
+          bot.sendMessage(msg.from.id, "Ви авторизувалися. За допомогою меню можете дізнатися заміни та розклад", {
+            reply_markup: {
+              keyboard: keyboard.main_user
+            }
+          });
+        }
+      })
+      break
+    case button.start.ghost:
+      bot.sendMessage(msg.from.id, "Ви увійшли в анонімному режимі. За допомогою меню можете дізнатися заміни та розклад для усіх груп", {
+        reply_markup: {
+          keyboard: keyboard.main_ghost
+        }
+      })
+      break
+    case button.main_user.back_user:
+      bot.sendMessage(msg.from.id, 'Виберіть режим входу', {
+        reply_markup: {
+          keyboard: keyboard.start
+        }
+      })
+      break
+    case button.main_ghost.back_ghost:
+      bot.sendMessage(msg.from.id, 'Виберіть режим входу', {
+        reply_markup: {
+          keyboard: keyboard.start
+        }
+      })
+      break
+    case button.main_user.replacements_user:
+      usertype='User';
+      funct.dataUpdate(msg,bot,usertype)
+      break
+    case button.main_ghost.replacements_ghost:
+      usertype='Anonim';
+      funct.dataUpdate(msg,bot,usertype)
+      break
+    
+  }
 })
+
 bot.on('callback_query', query=>{
     bot.answerCallbackQuery(query.id, query.data)
 });
@@ -110,35 +109,16 @@ bot.on('callback_query', query=>{
 bot.onText(/group (.+)/, function(msg,match){
 var userId = msg.from.id;
 var group = match[1];
-grp = group;
-bot.sendMessage(userId, 'Ты из группы '+group+'. Добро пожаловать!', {
+const user = new User({id: msg.from.id, group: match[1]});
+user.save(function(err){
+  if(err) return console.log(err);
+  bot.sendMessage(msg.from.id, "Вітаю. Ти зареєструвався. За допомогою меню можете дізнатися заміни та розклад", {
     reply_markup: {
-        inline_keyboard: [
-            [
-                {
-                    text: 'Підписатись',
-                    callback_data: 'autorization'
-                }
-            ],
-            [
-                {
-                    text: 'Розклад',
-                    callback_data: 'schedule'
-                },
-                {
-                    text: 'Заміни',
-                    callback_data: 'replacements'
-                }
-            ],
-            [
-                {
-                   text: 'SKXT NUXT',
-                   url: 'https://www.stxt.com.ua/' 
-                }
-            ]
-        ]
+      keyboard: keyboard.main_user
     }
+  })
 });
+
 });
 
 
@@ -149,7 +129,8 @@ bot.on('callback_query', function (msg) {
     var flag;
     //Заміни
     if (answer=='replacements') {
-      bot.sendDocument(msg.from.id, 'Заміни.doc');
+      //funct.dataUpdate();
+      dataUpdate();
     }
     //Підписка
     if (answer=='autorization') {
