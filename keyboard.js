@@ -6,6 +6,7 @@ module.exports = {
     ],
     main_user: [
         [buttons.main_user.replacements_user, buttons.main_user.schedule_user],
+        [buttons.main_user.update_user, buttons.main_user.delete_user],
         [buttons.main_user.back_user]
     ],
     main_ghost: [

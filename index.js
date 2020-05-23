@@ -19,18 +19,8 @@ const User = mongoose.model("User");
 var token = '1142305571:AAHi21iolrFMTeXDCdrtB1gqkbJHPxT0fpo';
 var bot = new TelegramBot(token, { polling: true });
 
-module.exports = {
-  bot
-}
-
-var grp;
-var zaminu,replase;
-
 
 // Отримання замін
-var https = require('https');
-var fs = require('fs');
-var extractor = new WordExtractor();
 
 
 // Початок
@@ -96,7 +86,19 @@ bot.on('message', function(msg){
       usertype='Anonim';
       funct.dataUpdate(msg,bot,usertype)
       break
-    
+    case button.main_user.update_user:
+      bot.sendMessage(msg.from.id, "Щоб змінити групу потрібно ввести /update [назва групи]\nПриклад: /update ПСК16\n");
+      break
+    case button.main_user.delete_user:
+      User.findOneAndDelete({id: msg.from.id}, function(err){
+        if(err) return console.log(err)
+        bot.sendMessage(msg.from.id, "Вітаю. Ти видалив себе з бази даних. Виберіть режим входу", {
+          reply_markup: {
+            keyboard: keyboard.start
+          }
+        })
+      })
+      break
   }
 })
 
@@ -119,6 +121,18 @@ user.save(function(err){
   })
 });
 
+});
+
+// Зміна групи
+bot.onText(/update (.+)/, function(msg, match){
+  User.findOneAndUpdate({id: msg.from.id}, {group: match[1]}, function(err){
+    if(err) return console.log(err);
+    bot.sendMessage(msg.from.id, "Вітаю. Ти змінив групу. За допомогою меню можете дізнатися заміни та розклад", {
+      reply_markup: {
+        keyboard: keyboard.main_user
+      }
+    })
+  })
 });
 
 
