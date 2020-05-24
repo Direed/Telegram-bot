@@ -1,4 +1,4 @@
-var WordExtractor = require("word-extractor");
+/*var WordExtractor = require("word-extractor");
 var extractor = new WordExtractor();
 var extracted = extractor.extract("test32.doc");
 const alf = "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ";
@@ -84,22 +84,14 @@ extracted.then(function(doc) {
       });
       console.log(zaminu);
       console.log(lessonNumber);
-});
+});*/
 
-/*var https = require('https');
+var https = require('https');
 var fs = require('fs');
-
-let file1 = fs.readFileSync("Заміни.doc", "utf8");
-let file2 = fs.readFileSync("zaminu.doc", "utf8");
-if(file1==file2)
-{
-  console.log("==");
-}
-else{
-  console.log("!=");
-  let file = fs.createWriteStream("zaminu.doc");
-  let fileupdate = fs.createWriteStream("Заміни.doc");
-  let request = https.get("https://www.stxt.com.ua/download/zam.php", function(response) {
-    response.pipe(file);
-});
-};*/
+let file1,file2,file,request;
+  file1 = fs.readFileSync("Заміни.doc");
+  file2 = fs.readFileSync("zaminu.doc");
+  if(file1==file2)
+  {console.log('gg')}
+  else{console.log('ne gg')}
+  

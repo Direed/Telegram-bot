@@ -90,7 +90,7 @@ return mas;
 }
 });
 if(usertype=='User'){
-  User.find({}, function(err, users){
+  User.find({id: msg.from.id}, function(err, users){
     if(err) return console.log(err);
     users.forEach(user => {
       let strzam='Заміни:\n';

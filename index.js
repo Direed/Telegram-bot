@@ -4,6 +4,8 @@ const funct = require('./fnct');
 const button = require('./buttons');
 const keyboard = require('./keyboard');
 const mongoose = require('mongoose');
+const https = require('https');
+const fs = require('fs');
 require('./model/user.model')
 
 
@@ -19,9 +21,15 @@ const User = mongoose.model("User");
 var token = '1142305571:AAHi21iolrFMTeXDCdrtB1gqkbJHPxT0fpo';
 var bot = new TelegramBot(token, { polling: true });
 
-
 // Отримання замін
+function refreshReplacement(){
+  let file = fs.createWriteStream("Заміни.doc");
+  let request = https.get("https://www.stxt.com.ua/download/zam.php", function(response) {
+    response.pipe(file);
+  });
+}
 
+setInterval(refreshReplacement, 60000)
 
 // Початок
 bot.onText(/\/start/, function(msg){
@@ -37,7 +45,7 @@ bot.on('message', function(msg){
   let flag,usertype;
   switch(msg.text){
     case button.start.user:
-      User.find({}, function(err, users){
+      User.find({id: msg.from.id}, function(err, users){
         if(err) return console.log(err);
         users.forEach(element => {
           if(element.id != msg.from.id){
