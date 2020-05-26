@@ -1,6 +1,7 @@
 const WordExtractor = require("word-extractor");
 const TelegramBot = require('node-telegram-bot-api');
 const funct = require('./fnct');
+const lll = require('./lll')
 const button = require('./buttons');
 const keyboard = require('./keyboard');
 const mongoose = require('mongoose');
@@ -29,7 +30,7 @@ function refreshReplacement(){
   });
 }
 
-setInterval(refreshReplacement, 60000)
+setInterval(refreshReplacement, 300000)
 
 // Початок
 bot.onText(/\/start/, function(msg){
@@ -93,6 +94,14 @@ bot.on('message', function(msg){
     case button.main_ghost.replacements_ghost:
       usertype='Anonim';
       funct.dataUpdate(msg,bot,usertype)
+      break
+    case button.main_user.schedule_user:
+      usertype='User';
+      lll.scheduleUpdate(msg,bot,usertype)
+      break
+    case button.main_ghost.schedule_ghost:
+      usertype='Anonim';
+      lll.scheduleUpdate(msg,bot,usertype)
       break
     case button.main_user.update_user:
       bot.sendMessage(msg.from.id, "Щоб змінити групу потрібно ввести /update [назва групи]\nПриклад: /update ПСК16\n");

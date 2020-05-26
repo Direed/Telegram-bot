@@ -5,6 +5,7 @@
   "dependencies": {
     "mongodb": "^3.5.5",
     "mongoose": "^5.9.6",
+    "needle": "^2.5.0",
     "node-telegram-bot-api": "^0.40.0",
     "word-extractor": "^0.3.0"
   },
