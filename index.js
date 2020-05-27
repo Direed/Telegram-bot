@@ -42,6 +42,7 @@ bot.onText(/\/start/, function(msg){
   })
 })
 
+//Два екрани
 bot.on('message', function(msg){
   let flag,usertype;
   switch(msg.text){
@@ -100,7 +101,7 @@ bot.on('message', function(msg){
       lll.scheduleUpdate(msg,bot,usertype)
       break
     case button.main_ghost.schedule_ghost:
-      usertype='Anonim';
+      bot.sendMessage(msg.from.id, "Щоб отримати розклад потрібно ввести /getSchedule [назва групи]\nПриклад: /getSchedule ПСК16\n");
       lll.scheduleUpdate(msg,bot,usertype)
       break
     case button.main_user.update_user:
@@ -153,39 +154,8 @@ bot.onText(/update (.+)/, function(msg, match){
 });
 
 
-// Меню
-bot.on('callback_query', function (msg) {
-    var answer = msg.data;
-    console.log(answer);
-    var flag;
-    //Заміни
-    if (answer=='replacements') {
-      //funct.dataUpdate();
-      dataUpdate();
-    }
-    //Підписка
-    if (answer=='autorization') {
-      User.find({}, function(err, users){
-        if(err) return console.log(err);
-        users.forEach(element => {
-          if(element.id != msg.from.id){
-            flag = false;
-          }
-          else {flag = true};
-        });
-        if(flag == false){
-          const user = new User({id: msg.from.id, group: grp});
-          user.save(function(err){
-            if(err) return console.log(err);
-            console.log("Add user");
-            bot.sendMessage(msg.from.id, "Поздравляю. Ты подписался на бота!!!")
-          });
-        }
-        else {
-          bot.sendMessage(msg.from.id, "Ты уже подписан на меня!!!");
-        }
-        console.log(users);
-      })
-    }
-    newQuestion(msg);
-  });
+// Отримання розкладу для анонімного користувача
+bot.onText(/getSchedule (.+)/, function(msg, match){
+  usertype = 'Anonim';
+  lll.scheduleUpdate(msg,bot,usertype,match[1]);
+})

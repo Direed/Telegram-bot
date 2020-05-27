@@ -100,12 +100,15 @@ if(usertype=='User'){
           strzam = strzam + maszaminu[i].join(' - ') +'\n';
         }
       }
-      bot.sendMessage(msg.from.id, strzam);
+      if(strzam!='Заміни:\n'){
+        bot.sendMessage(msg.from.id, strzam);
+      }
+      else{bot.sendMessage(msg.from.id, 'Для вас замін немає')}
     })
   })
 }
 else if(usertype=='Anonim'){
-  let strzam='Заміни:\n';
+  let strzam='Заміни:\n'
   for(let i=0; i<maszaminu.length; i++){
     strzam = strzam + maszaminu[i].join(' - ') +'\n';
   }
