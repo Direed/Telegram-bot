@@ -49,8 +49,9 @@ bot.on('message', function(msg){
     case button.start.user:
       User.find({}, function(err, users){
         if(err) return console.log(err);
+        flag=false;
         users.forEach(element => {
-          if(element.id != msg.from.id){
+          if(element.id != msg.from.id && flag==false){
             flag = false;
           }
           else {flag = true};
